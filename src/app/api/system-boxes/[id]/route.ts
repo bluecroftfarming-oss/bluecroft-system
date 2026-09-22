@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { systemBoxes, crabs } from "@/db/schema";
@@ -16,11 +16,19 @@ export const GET = withApiErrors(async (_req: NextRequest, ctx: RouteContext<"/a
   const id = parseId((await ctx.params).id, "system box");
   const [box] = await db.select().from(systemBoxes).where(eq(systemBoxes.id, id));
   if (!box) throw new NotFoundError("System box not found");
-  const [{ occupancy }] = await db
-    .select({ occupancy: sql<number>`count(*)` })
+  const occupants = await db
+    .select({
+      id: crabs.id,
+      legacyCrabNumber: crabs.legacyCrabNumber,
+      grade: crabs.grade,
+      gender: crabs.gender,
+      status: crabs.status,
+      intakeDate: crabs.intakeDate,
+    })
     .from(crabs)
-    .where(eq(crabs.currentSystemBoxId, id));
-  return NextResponse.json({ data: { ...box, occupancy } });
+    .where(and(eq(crabs.currentSystemBoxId, id), eq(crabs.status, "IN_SYSTEM")))
+    .orderBy(crabs.id);
+  return NextResponse.json({ data: { ...box, occupancy: occupants.length, occupants } });
 });
 
 export const PATCH = withApiErrors(async (req: NextRequest, ctx: RouteContext<"/api/system-boxes/[id]">) => {
