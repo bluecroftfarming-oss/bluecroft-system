@@ -6,7 +6,16 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { TextInput } from "@/components/ui/Field";
 import { BoxFormModal } from "@/components/boxes/BoxFormModal";
+import { BoxDetailModal } from "@/components/boxes/BoxDetailModal";
 import { formatNumber } from "@/lib/format";
+
+export type BoxOccupant = {
+  id: number;
+  legacyCrabNumber: number | null;
+  grade: string;
+  gender: string;
+  intakeDate: string | null;
+};
 
 export type BoxRow = {
   id: number;
@@ -15,13 +24,15 @@ export type BoxRow = {
   capacity: number | null;
   notes: string | null;
   occupancy: number;
+  occupants: BoxOccupant[];
 };
 
 export function BoxesClient({ initialBoxes }: { initialBoxes: BoxRow[] }) {
   const [boxes] = useState(initialBoxes);
   const [search, setSearch] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingBox, setEditingBox] = useState<BoxRow | null>(null);
+  const [detailBox, setDetailBox] = useState<BoxRow | null>(null);
 
   const refetch = () => window.location.reload();
 
@@ -35,11 +46,16 @@ export function BoxesClient({ initialBoxes }: { initialBoxes: BoxRow[] }) {
 
   function openAdd() {
     setEditingBox(null);
-    setModalOpen(true);
+    setFormModalOpen(true);
   }
-  function openEdit(b: BoxRow) {
-    setEditingBox(b);
-    setModalOpen(true);
+  function openEditFromDetail() {
+    if (!detailBox) return;
+    setEditingBox(detailBox);
+    setDetailBox(null);
+    setFormModalOpen(true);
+  }
+  function openDetail(b: BoxRow) {
+    setDetailBox(b);
   }
 
   return (
@@ -48,7 +64,8 @@ export function BoxesClient({ initialBoxes }: { initialBoxes: BoxRow[] }) {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-brand-900">System Boxes</h1>
           <p className="mt-1 text-sm text-black/50">
-            {formatNumber(boxes.length)} boxes registered — {formatNumber(totalOccupied)} currently occupied.
+            {formatNumber(boxes.length)} boxes registered — {formatNumber(totalOccupied)} currently occupied. Click a
+            box to see who&rsquo;s in it, update status, or transfer.
           </p>
         </div>
         <Button onClick={openAdd}>
@@ -67,34 +84,59 @@ export function BoxesClient({ initialBoxes }: { initialBoxes: BoxRow[] }) {
         </div>
 
         <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {filtered.map((b) => (
-            <button
-              key={b.id}
-              onClick={() => openEdit(b)}
-              className="flex flex-col items-start gap-1 rounded-xl border border-brand-100 bg-gradient-to-br from-white to-brand-50/60 px-3 py-2.5 text-left transition hover:border-brand-300 hover:shadow-sm"
-            >
-              <div className="flex w-full items-center justify-between">
-                <span className="text-sm font-semibold text-brand-900">{b.label}</span>
-                {b.occupancy > 0 ? (
-                  <Badge tone="brand">{b.occupancy}</Badge>
-                ) : (
-                  <Badge tone="neutral">empty</Badge>
+          {filtered.map((b) => {
+            const capacity = b.capacity ?? 1;
+            const isFull = b.occupancy >= capacity;
+            const isReserve = b.label === "In-box reserve";
+            return (
+              <button
+                key={b.id}
+                onClick={() => openDetail(b)}
+                className={`flex flex-col items-start gap-1 rounded-xl border px-3 py-2.5 text-left transition hover:border-brand-300 hover:shadow-sm ${
+                  isReserve
+                    ? "border-amber-200 bg-gradient-to-br from-white to-amber-50/60"
+                    : "border-brand-100 bg-gradient-to-br from-white to-brand-50/60"
+                }`}
+              >
+                <div className="flex w-full items-center justify-between">
+                  <span className="text-sm font-semibold text-brand-900">{b.label}</span>
+                  {b.occupancy > 0 ? (
+                    <Badge tone={isFull && !isReserve ? "brand" : isReserve ? "warn" : "brand"}>
+                      {b.occupancy}/{capacity}
+                    </Badge>
+                  ) : (
+                    <Badge tone="neutral">empty</Badge>
+                  )}
+                </div>
+                {b.section && <span className="text-xs text-black/45">{b.section}</span>}
+                {b.occupants[0] && (
+                  <span className="text-xs font-medium text-brand-700">
+                    Crab #{b.occupants[0].legacyCrabNumber ?? b.occupants[0].id}
+                    {b.occupants.length > 1 ? ` +${b.occupants.length - 1} more` : ""}
+                  </span>
                 )}
-              </div>
-              {b.section && <span className="text-xs text-black/45">{b.section}</span>}
-              {b.capacity !== null && <span className="text-xs text-black/35">cap {b.capacity}</span>}
-            </button>
-          ))}
+              </button>
+            );
+          })}
           {filtered.length === 0 && (
-            <p className="col-span-full py-8 text-center text-sm text-black/40">No boxes match “{search}”.</p>
+            <p className="col-span-full py-8 text-center text-sm text-black/40">No boxes match &ldquo;{search}&rdquo;.</p>
           )}
         </div>
       </Card>
 
+      <BoxDetailModal
+        open={!!detailBox}
+        onClose={() => setDetailBox(null)}
+        box={boxes.find((b) => b.id === detailBox?.id) ?? detailBox}
+        allBoxes={boxes}
+        onChanged={refetch}
+        onEditBox={openEditFromDetail}
+      />
+
       <BoxFormModal
         key={editingBox ? `edit-${editingBox.id}` : "new"}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        open={formModalOpen}
+        onClose={() => setFormModalOpen(false)}
         box={editingBox}
         onSaved={refetch}
       />
