@@ -30,7 +30,9 @@ RUN chmod +x ./docker-entrypoint.sh
 # The live SQLite file lives on a persistent volume mounted at /app/data —
 # attach one at this path in your host's dashboard (Railway/Render/Fly all
 # support this), otherwise every redeploy resets to the seed data.
-VOLUME ["/app/data"]
+# (No Docker VOLUME instruction here: some hosts, e.g. Railway, reject it at
+# build time and require the volume to be configured entirely in their own
+# dashboard instead.)
 EXPOSE 3000
 ENV PORT=3000
 
