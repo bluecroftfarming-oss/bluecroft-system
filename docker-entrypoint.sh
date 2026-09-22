@@ -38,4 +38,12 @@ else
   echo "[entrypoint] Existing database found on the volume — using it as-is."
 fi
 
+# Idempotent schema/data migration — safe to run on every boot. Adds the
+# crab_timeline_events table, the 'In-box reserve' box, box capacity
+# defaults, and backfills opening timeline entries. See the script itself
+# for details.
+if [ -f data/bluecroft.db ]; then
+  node scripts/runtime-migrate.cjs
+fi
+
 exec node_modules/.bin/next start -p "${PORT:-3000}"
