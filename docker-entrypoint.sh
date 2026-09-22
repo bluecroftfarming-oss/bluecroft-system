@@ -10,9 +10,9 @@ set -e
 mkdir -p data
 
 if [ ! -f data/bluecroft.db ]; then
-  if [ -f data/seed/bluecroft.seed.db ]; then
+  if [ -f seed/bluecroft.seed.db ]; then
     echo "[entrypoint] No database found on the volume — seeding from migrated data (2,169 crabs, 43 vendors, 193 boxes)..."
-    cp data/seed/bluecroft.seed.db data/bluecroft.db
+    cp seed/bluecroft.seed.db data/bluecroft.db
   else
     echo "[entrypoint] No database and no seed file found — starting empty. Run migration manually if this is unexpected."
   fi
