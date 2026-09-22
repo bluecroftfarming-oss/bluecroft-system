@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { systemBoxes, crabs } from "@/db/schema";
 import { BoxesClient } from "@/components/boxes/BoxesClient";
@@ -7,21 +7,50 @@ import { BoxesClient } from "@/components/boxes/BoxesClient";
 export const dynamic = "force-dynamic";
 
 export default async function BoxesPage() {
-  const rows = await db
-    .select({
-      id: systemBoxes.id,
-      label: systemBoxes.label,
-      section: systemBoxes.section,
-      capacity: systemBoxes.capacity,
-      notes: systemBoxes.notes,
-      // Written with literal, already-qualified identifiers rather than interpolating drizzle
-      // column refs: inside a correlated subquery, ${crabs.x} / ${systemBoxes.id} render as bare
-      // unqualified column names, so `id` would resolve to crabs.id (both tables have one) instead
-      // of correlating to the outer system_boxes.id — silently producing 0 for every box.
-      occupancy: sql<number>`(select count(*) from crabs where crabs.current_system_box_id = system_boxes.id and crabs.status = 'IN_SYSTEM')`,
-    })
-    .from(systemBoxes)
-    .orderBy(systemBoxes.label);
+  const [boxRows, occupantRows] = await Promise.all([
+    db
+      .select({
+        id: systemBoxes.id,
+        label: systemBoxes.label,
+        section: systemBoxes.section,
+        capacity: systemBoxes.capacity,
+        notes: systemBoxes.notes,
+      })
+      .from(systemBoxes)
+      .orderBy(systemBoxes.label),
+    // The occupant list is derived straight from `crabs` — never a denormalized
+    // copy — so a box's displayed occupants can never drift from Inventory.
+    db
+      .select({
+        id: crabs.id,
+        legacyCrabNumber: crabs.legacyCrabNumber,
+        grade: crabs.grade,
+        gender: crabs.gender,
+        intakeDate: crabs.intakeDate,
+        currentSystemBoxId: crabs.currentSystemBoxId,
+      })
+      .from(crabs)
+      .where(eq(crabs.status, "IN_SYSTEM")),
+  ]);
+
+  const normalizedOccupants = occupantRows.map((c) => ({
+    ...c,
+    grade: c.grade ?? "UNGRADED",
+    gender: c.gender ?? "UNKNOWN",
+  }));
+
+  const occupantsByBox = new Map<number, typeof normalizedOccupants>();
+  for (const c of normalizedOccupants) {
+    if (c.currentSystemBoxId === null) continue;
+    const list = occupantsByBox.get(c.currentSystemBoxId) ?? [];
+    list.push(c);
+    occupantsByBox.set(c.currentSystemBoxId, list);
+  }
+
+  const rows = boxRows.map((b) => {
+    const occupants = occupantsByBox.get(b.id) ?? [];
+    return { ...b, occupancy: occupants.length, occupants };
+  });
 
   return <BoxesClient initialBoxes={rows} />;
 }
