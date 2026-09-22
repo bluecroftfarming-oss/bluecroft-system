@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -252,13 +253,22 @@ export function InventoryClient({
                     </Td>
                     <Td className="max-w-[180px] truncate text-black/50">{r.legacyRemarks ?? ""}</Td>
                     <Td>
-                      <button
-                        onClick={() => openEdit(r)}
-                        className="rounded-lg p-1.5 text-brand-600 hover:bg-brand-100"
-                        aria-label="Edit"
-                      >
-                        <EditIcon />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <Link
+                          href={`/inventory/${r.id}`}
+                          className="rounded-lg p-1.5 text-brand-600 hover:bg-brand-100"
+                          aria-label="View"
+                        >
+                          <ViewIcon />
+                        </Link>
+                        <button
+                          onClick={() => openEdit(r)}
+                          className="rounded-lg p-1.5 text-brand-600 hover:bg-brand-100"
+                          aria-label="Edit"
+                        >
+                          <EditIcon />
+                        </button>
+                      </div>
                     </Td>
                   </tr>
                 );
@@ -319,6 +329,13 @@ function PlusIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
       <path d="M10 3a.75.75 0 01.75.75v5.5h5.5a.75.75 0 010 1.5h-5.5v5.5a.75.75 0 01-1.5 0v-5.5h-5.5a.75.75 0 010-1.5h5.5v-5.5A.75.75 0 0110 3z" />
+    </svg>
+  );
+}
+function ViewIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M10 3.5c-4.5 0-7.5 3.5-8.5 6.5 1 3 4 6.5 8.5 6.5s7.5-3.5 8.5-6.5c-1-3-4-6.5-8.5-6.5zM10 13.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z" />
     </svg>
   );
 }
