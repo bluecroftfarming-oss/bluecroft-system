@@ -1,9 +1,13 @@
 # Bluecroft Farming — Crab Inventory Control System
 #
 # Single-stage-ish build on a glibc (not alpine) base so better-sqlite3's
-# prebuilt native binding resolves without needing a C++ toolchain.
+# native binding can be built or resolved without extra runtime dependencies.
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
+# better-sqlite3 falls back to compiling from source (node-gyp) whenever a
+# matching prebuilt binary isn't available, so make sure a C++ toolchain and
+# Python are present — the slim base doesn't include them by default.
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 RUN npm ci
 
