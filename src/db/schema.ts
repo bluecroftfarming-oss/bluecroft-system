@@ -145,6 +145,30 @@ export const events = sqliteTable("events", {
 });
 
 // ---------------------------------------------------------------------------
+// Crab Timeline Events — the per-crab status/box history shown on the crab
+// detail page. Deliberately separate from `events` above (which holds the
+// 309 structured notes carried over from the original Excel sheet, with real
+// pre-go-live dates): every crab that existed before go-live gets exactly one
+// IMPORT row here ("Import from Excel", dated 2026-09-22), and everything
+// after go-live — status changes, box transfers, new intakes — is logged
+// here going forward by the API itself.
+// ---------------------------------------------------------------------------
+export const crabTimelineEvents = sqliteTable("crab_timeline_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  crabId: integer("crab_id").notNull().references(() => crabs.id),
+  eventType: text("event_type", {
+    enum: ["IMPORT", "CREATED", "STATUS_CHANGE", "BOX_TRANSFER"],
+  }).notNull(),
+  fromStatus: text("from_status"),
+  toStatus: text("to_status"),
+  fromSystemBoxId: integer("from_system_box_id").references(() => systemBoxes.id),
+  toSystemBoxId: integer("to_system_box_id").references(() => systemBoxes.id),
+  note: text("note"),
+  eventDate: text("event_date").notNull(), // ISO date
+  createdAt: text("created_at").default(sql`(current_timestamp)`),
+});
+
+// ---------------------------------------------------------------------------
 // Transactions — money log. A crab can have more than one (e.g. purchased,
 // later returned for a refund, or an initial buy-back followed by a resale).
 // ---------------------------------------------------------------------------
