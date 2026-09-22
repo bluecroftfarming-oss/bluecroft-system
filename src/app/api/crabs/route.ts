@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, desc, eq, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
-import { crabs, vendors, systemBoxes, batches } from "@/db/schema";
+import { crabs, vendors, systemBoxes, batches, crabTimelineEvents } from "@/db/schema";
 import { parsePagination, withApiErrors } from "@/lib/api";
+import { assertBoxHasRoom } from "@/lib/boxCapacity";
+import { todayIST } from "@/lib/date";
 
 const GENDER = ["MALE", "FEMALE", "UNKNOWN"] as const;
 const GRADE = ["XXL", "XL", "BIG", "MED", "SM", "LOCAL", "LC", "LLC", "MOLT", "UNGRADED"] as const;
@@ -98,6 +100,24 @@ export const GET = withApiErrors(async (req: NextRequest) => {
 
 export const POST = withApiErrors(async (req: NextRequest) => {
   const body = crabInput.parse(await req.json());
+
+  if (body.status === "IN_SYSTEM" && body.currentSystemBoxId) {
+    await assertBoxHasRoom(body.currentSystemBoxId, null);
+  }
+
   const [created] = await db.insert(crabs).values(body).returning();
+
+  // Every crab added after go-live gets a real, going-forward timeline —
+  // starting with this creation entry (as opposed to the "Import from Excel"
+  // opening entry backfilled for crabs that existed before go-live).
+  await db.insert(crabTimelineEvents).values({
+    crabId: created.id,
+    eventType: "CREATED",
+    toStatus: created.status,
+    toSystemBoxId: created.currentSystemBoxId,
+    note: "Added to inventory",
+    eventDate: todayIST(),
+  });
+
   return NextResponse.json({ data: created }, { status: 201 });
 });
