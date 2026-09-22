@@ -21,6 +21,9 @@ export function withApiErrors<Args extends unknown[]>(
       if (err instanceof NotFoundError) {
         return apiError(err.message, 404);
       }
+      if (err instanceof ConflictError) {
+        return apiError(err.message, 409);
+      }
       const sqliteMessage = sqliteConstraintMessage(err);
       if (sqliteMessage) {
         return apiError(sqliteMessage, 409);
@@ -32,6 +35,9 @@ export function withApiErrors<Args extends unknown[]>(
 }
 
 export class NotFoundError extends Error {}
+
+/** Any 409-worthy business-rule conflict (e.g. a box that's already occupied). */
+export class ConflictError extends Error {}
 
 /** Turns a better-sqlite3 constraint violation into a friendly message, or returns null for any
  * other error (which falls through to the generic 500 handler). */
