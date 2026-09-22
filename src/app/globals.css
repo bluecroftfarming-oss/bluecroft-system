@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4fafb;
+  --foreground: #0b2226;
+
+  /* Bluecroft brand colors — sampled directly from the logo */
+  --color-brand-50: #eafcfd;
+  --color-brand-100: #cdf4f7;
+  --color-brand-200: #9ee8ee;
+  --color-brand-300: #5fd6e1;
+  --color-brand-400: #1cbdcd;
+  --color-brand-light: #00b0c4; /* logo — bright teal side */
+  --color-brand-500: #00b0c4;
+  --color-brand-600: #0099ad;
+  --color-brand-dark: #008096; /* logo — deep teal side */
+  --color-brand-700: #007086;
+  --color-brand-800: #045a68;
+  --color-brand-900: #073e49;
+
+  /* Status colors, kept in the same family so the palette stays cohesive */
+  --color-status-good: #0f9d6b;
+  --color-status-warn: #d99a1f;
+  --color-status-bad: #d64545;
+  --color-status-neutral: #6b7280;
+
+  --gradient-brand: linear-gradient(135deg, var(--color-brand-500) 0%, var(--color-brand-700) 100%);
+  --gradient-surface: linear-gradient(180deg, #ffffff 0%, var(--color-brand-50) 100%);
+  --gradient-page: radial-gradient(120% 140% at 0% 0%, var(--color-brand-50) 0%, #f4fafb 45%, #ffffff 100%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand-50: var(--color-brand-50);
+  --color-brand-100: var(--color-brand-100);
+  --color-brand-200: var(--color-brand-200);
+  --color-brand-300: var(--color-brand-300);
+  --color-brand-400: var(--color-brand-400);
+  --color-brand-500: var(--color-brand-500);
+  --color-brand-600: var(--color-brand-600);
+  --color-brand-700: var(--color-brand-700);
+  --color-brand-800: var(--color-brand-800);
+  --color-brand-900: var(--color-brand-900);
+  --color-brand-light: var(--color-brand-light);
+  --color-brand-dark: var(--color-brand-dark);
+  --color-status-good: var(--color-status-good);
+  --color-status-warn: var(--color-status-warn);
+  --color-status-bad: var(--color-status-bad);
+  --color-status-neutral: var(--color-status-neutral);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+body {
+  background: var(--gradient-page);
+  background-attachment: fixed;
+  color: var(--foreground);
+}
+
+/* Thin, brand-tinted scrollbars — small touch that reads as "designed" rather than default */
+* {
+  scrollbar-color: var(--color-brand-300) transparent;
+  scrollbar-width: thin;
+}
+
