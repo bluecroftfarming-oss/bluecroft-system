@@ -10,12 +10,14 @@ const NAV_ITEMS = [
   { href: "/inventory", label: "Inventory", icon: InventoryIcon },
   { href: "/vendors", label: "Vendors", icon: VendorsIcon },
   { href: "/boxes", label: "System Boxes", icon: BoxesIcon },
-  { href: "/reports", label: "Reports & Analysis", icon: ReportsIcon, comingSoon: true },
+  { href: "/reports", label: "Reports & Analysis", icon: ReportsIcon },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  if (pathname === "/login") return null;
 
   const nav = (
     <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
@@ -25,28 +27,18 @@ export function Sidebar() {
         return (
           <Link
             key={item.href}
-            href={item.comingSoon ? "#" : item.href}
-            onClick={(e) => {
-              if (item.comingSoon) e.preventDefault();
-              setMobileOpen(false);
-            }}
+            href={item.href}
+            onClick={() => setMobileOpen(false)}
             className={`group flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
               active
                 ? "bg-[image:var(--gradient-brand)] text-white shadow-[0_6px_16px_-6px_rgba(0,112,134,0.5)]"
-                : item.comingSoon
-                  ? "cursor-not-allowed text-black/30"
-                  : "text-brand-900/70 hover:bg-brand-50 hover:text-brand-900"
+                : "text-brand-900/70 hover:bg-brand-50 hover:text-brand-900"
             }`}
           >
             <span className="flex items-center gap-2.5">
               <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-white" : "text-brand-400 group-hover:text-brand-600"}`} />
               {item.label}
             </span>
-            {item.comingSoon && (
-              <span className="rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] font-semibold text-black/40">
-                SOON
-              </span>
-            )}
           </Link>
         );
       })}
@@ -86,8 +78,17 @@ export function Sidebar() {
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-brand-100 bg-white/80 backdrop-blur-sm lg:flex">
         <SidebarHeader />
         {nav}
-        <div className="border-t border-brand-100 px-5 py-4 text-xs text-black/35">
-          Bluecroft Farming — next generation farming
+        <div className="border-t border-brand-100 px-5 py-4">
+          <button
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              window.location.href = "/login";
+            }}
+            className="mb-2 flex items-center gap-1.5 text-xs font-medium text-brand-700/70 hover:text-brand-900"
+          >
+            <LogoutIcon /> Sign out
+          </button>
+          <p className="text-xs text-black/35">Bluecroft Farming — next generation farming</p>
         </div>
       </aside>
     </>
@@ -108,7 +109,7 @@ function SidebarHeader({ onClose }: { onClose?: () => void }) {
         <button onClick={onClose} className="rounded-full p-1.5 text-black/40 hover:bg-black/5" aria-label="Close menu">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
             <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-          </svg>
+        </svg>
         </button>
       )}
     </div>
@@ -140,6 +141,13 @@ function BoxesIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="currentColor">
       <path d="M9.55 1.68a1 1 0 01.9 0l6.5 3.25a1 1 0 010 1.79l-6.5 3.24a1 1 0 01-.9 0l-6.5-3.24a1 1 0 010-1.8l6.5-3.24zM2.4 8.2l6.75 3.37c.56.28 1.14.28 1.7 0L17.6 8.2v6.87a1 1 0 01-.55.9l-6.5 3.24a1 1 0 01-.9 0l-6.5-3.24a1 1 0 01-.55-.9V8.2z" />
+    </svg>
+  );
+}
+function LogoutIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className ?? "h-3.5 w-3.5"} viewBox="0 0 20 20" fill="currentColor">
+      <path d="M8 3a1 1 0 000 2H5a1 1 0 00-1 1v8a1 1 0 001 1h3a1 1 0 100-2H6V5h2a1 1 0 001-1V3H8zm4.29 3.29a1 1 0 011.42 0l3 3a1 1 0 010 1.42l-3 3a1 1 0 01-1.42-1.42L13.59 11H8a1 1 0 110-2h5.59l-1.3-1.29a1 1 0 010-1.42z" />
     </svg>
   );
 }
